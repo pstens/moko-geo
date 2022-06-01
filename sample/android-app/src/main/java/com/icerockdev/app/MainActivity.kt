@@ -21,7 +21,8 @@ class MainActivity : MvvmActivity<ActivityMainBinding, TrackerViewModel>() {
     override fun viewModelFactory(): ViewModelProvider.Factory {
         return createViewModelFactory {
             val locationTracker = LocationTracker(
-                permissionsController = PermissionsController(applicationContext = applicationContext)
+                permissionsController = PermissionsController(applicationContext = applicationContext),
+                context = this
             )
             TrackerViewModel(locationTracker)
         }
