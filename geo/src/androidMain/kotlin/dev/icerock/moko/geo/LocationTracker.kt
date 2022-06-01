@@ -11,10 +11,10 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
 import dev.icerock.moko.permissions.Permission
 import dev.icerock.moko.permissions.PermissionsController
 import kotlinx.coroutines.CoroutineScope
@@ -28,10 +28,13 @@ import kotlinx.coroutines.launch
 
 actual class LocationTracker(
     actual val permissionsController: PermissionsController,
+    private val context: Context,
     interval: Long = 1000,
     priority: Int = LocationRequest.PRIORITY_HIGH_ACCURACY
 ) : LocationCallback() {
-    private var locationProviderClient: FusedLocationProviderClient? = null
+    private val locationProviderClient by lazy {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
     private var isStarted: Boolean = false
     private val locationRequest = LocationRequest().also {
         it.interval = interval
@@ -41,10 +44,9 @@ actual class LocationTracker(
     private val extendedLocationsChannel = Channel<ExtendedLocation>(Channel.CONFLATED)
     private val trackerScope = CoroutineScope(Dispatchers.Main)
 
+    @Suppress("UNUSED_PARAMETER")
     fun bind(lifecycle: Lifecycle, context: Context, fragmentManager: FragmentManager) {
         permissionsController.bind(lifecycle, fragmentManager)
-
-        locationProviderClient = FusedLocationProviderClient(context)
 
         @SuppressLint("MissingPermission")
         if (isStarted) {
@@ -55,7 +57,6 @@ actual class LocationTracker(
             @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
             fun onDestroy() {
                 locationProviderClient?.removeLocationUpdates(this@LocationTracker)
-                locationProviderClient = null
             }
         })
     }
